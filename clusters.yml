@@ -1,0 +1,3 @@
+clusters:
+  community-tc: taskcluster-communitytc-v1
+  fx-ci: taskcluster-firefoxcitc-v1

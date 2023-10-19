@@ -1,0 +1,23 @@
+name: API
+
+queries:
+
+# too many of those
+# - name: 404 api calls
+#   query: |
+#     jsonPayload.Fields.statusCode="404"
+
+# too slow
+- name: 403 api calls
+  query: |
+    jsonPayload.Type="monitor.apiMethod"
+    jsonPayload.Fields.statusCode="403"
+
+- name: 500 api calls
+  query: |
+    jsonPayload.Type="monitor.apiMethod"
+    jsonPayload.Fields.statusCode="500"
+
+- name: Pulse publisher send deadline
+  query: |
+    "PulsePublisher.sendDeadline exceeded"

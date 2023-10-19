@@ -1,9 +1,12 @@
-cluster_name: taskcluster-communitytc-v1
+name: Tasks and Queue related
+
 queries:
+
 - name: claim-expired
   query: |
     jsonPayload.Type="task-exception"
     jsonPayload.Logger="taskcluster.queue.claim-resolver"
+
 - name: deadline-exceeded
   query: |
     jsonPayload.Type="task-exception"
