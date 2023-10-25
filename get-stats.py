@@ -202,14 +202,21 @@ def summarize_tasks(tasks):
     runs = {}
     resolutions = {}
     workerIds = {}
+    taskIds = []
+    names = {}
 
     for task in tasks:
+        taskIds.append(task["taskId"])
         inc_counter(taskQueues, task["taskQueueId"])
+        inc_counter(names, task["metadata"]["name"])
         runs[task["taskId"]] = len(task["status"]["runs"])
         for run in task["status"]["runs"]:
-            inc_counter(resolutions, run["reasonResolved"])
-            inc_counter(workerIds, run["workerId"])
+            if "reasonResolved" in run:
+                inc_counter(resolutions, run["reasonResolved"])
+            if "workerId" in run:
+                inc_counter(workerIds, run["workerId"])
 
+    print_counter(names, "names")
     print_counter(taskQueues, "Task Queues")
     print_counter(resolutions, "Run resolutions")
     print_counter(runs, "Runs")
@@ -220,7 +227,33 @@ def summarize_tasks(tasks):
         "resolutions": resolutions,
         "runs": runs,
         "workerIds": workerIds,
+        "taskIds": taskIds,
     }
+
+
+def query_multi(summary, query, client, cluster_id, timestamp):
+    query_tpl = query["query"]
+    [(field, collection)] = query["iterate"].items()
+
+    if collection not in summary:
+        print(f"Unknown collection: {collection}")
+        return
+
+    for row in summary[collection]:
+        print(f"\nchecking for {field}={row}")
+        res = query_logs(
+            client,
+            query_tpl.replace(f"%{field}%", row),
+            cluster_id,
+            timestamp,
+            use_cache=True,
+        )
+        if "extract" in query:
+            print("Extracted:")
+            for row in extract_fields(res, query["extract"]):
+                print(row)
+        else:
+            print(f"Found {len(res)} records")
 
 
 def check_worker_claims(summary, query, client, cluster_id, timestamp):
@@ -277,7 +310,10 @@ def run_queries(cluster_id, query_groups=[], client=None):
                 print(f"\r{title}{count:>{VAL_WIDTH}}{' ' * 4}")
             elif query["type"] == "query":
                 res = query_logs(client, query["query"], cluster_id, timestamp)
-                print(f"\Fetched {len(res)} records\n")
+                print(f"\nFetched {len(res)} records\n")
+            elif query["type"] == "query-multi":
+                # not piped yet
+                query_multi(extracted, query, client, cluster_id, timestamp)
             elif query["type"] == "lookup-tasks":
                 extracted = lookup_tasks(extracted, query["field"], use_cache)
                 print(f"\nLooked up {len(extracted)} tasks")
@@ -285,6 +321,8 @@ def run_queries(cluster_id, query_groups=[], client=None):
                 extracted = summarize_tasks(extracted)
             elif query["type"] == "check-worker-claims":
                 check_worker_claims(extracted, query, client, cluster_id, timestamp)
+            elif query["type"] == "input":
+                res = extracted = query["data"]
             else:
                 print("Unknown type")
 

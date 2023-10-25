@@ -1,0 +1,31 @@
+name: Investigate single worker
+
+queries:
+
+- name: Worker id
+  type: input
+  data:
+    workerIds:
+      - i-06e4c2473c69c4d72
+
+- name: check workers
+  type: check-worker-claims
+  iterate:
+    workerId: workerIds
+  query: |
+    jsonPayload.Type="monitor.apiMethod"
+    "%workerId%"
+
+  queryFaster: |
+    // this is faster but doesn't get other stuff ..
+    jsonPayload.Fields.workerId="%workerId%"
+
+  description: |
+    workers only have "claimWork" as their last known call to the system
+
+  extract:
+    type: jsonPayload.Type
+    taskId: jsonPayload.Fields.taskId
+    time: timestamp
+    name: jsonPayload.Fields.name
+    clientId: jsonPayload.Fields.clientId

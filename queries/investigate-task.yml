@@ -1,0 +1,34 @@
+name: Investigate single task
+
+queries:
+
+- name: Task id
+  type: input
+  data:
+    # - taskId: UwFQ3YVMRjyxmxHEO6_tQg
+    - taskId: QH_iyf6uR5Sj8DcTkLXwnA
+
+- name: fetch task data
+  description: take entries from previous query and fetch task data
+  type: lookup-tasks
+  field: taskId
+  cache: false
+
+- name: analyze task queues
+  type: summarize-tasks
+  cache: false
+
+- name: query logs
+  type: query-multi
+  iterate:
+    taskId: taskIds
+  query: |
+    jsonPayload.Type="monitor.apiMethod"
+    "%taskId%"
+  extract:
+    # type: jsonPayload.Type
+    statusCode: jsonPayload.Fields.statusCode
+    # resource: jsonPayload.Fields.resource
+    time: timestamp
+    name: jsonPayload.Fields.name
+    clientId: jsonPayload.Fields.clientId
