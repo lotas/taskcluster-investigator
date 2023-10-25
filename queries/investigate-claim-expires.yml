@@ -1,0 +1,42 @@
+name: Investigate claim expires
+
+queries:
+
+- name: claim-expired
+  type: query
+  extract:
+    taskId: jsonPayload.Fields.taskId
+  query: |
+    jsonPayload.Type="task-exception"
+    jsonPayload.Logger="taskcluster.queue.claim-resolver"
+
+- name: fetch task data
+  description: take entries from previous query and fetch task data
+  type: lookup-tasks
+  field: taskId
+
+- name: analyze task queues
+  type: summarize-tasks
+  cache: false
+
+- name: check workers
+  type: check-worker-claims
+  iterate:
+    workerId: workerIds
+  query: |
+    jsonPayload.Type="monitor.apiMethod"
+    "%workerId%"
+
+  queryFaster: |
+    // this is faster but doesn't get other stuff ..
+    jsonPayload.Fields.workerId="%workerId%"
+
+  description: |
+    workers only have "claimWork" as their last known call to the system
+
+  extract:
+    type: jsonPayload.Type
+    taskId: jsonPayload.Fields.taskId
+    time: timestamp
+    name: jsonPayload.Fields.name
+    clientId: jsonPayload.Fields.clientId

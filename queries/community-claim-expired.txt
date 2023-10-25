@@ -1,3 +1,0 @@
-resource.labels.cluster_name="taskcluster-communitytc-v1"
-jsonPayload.Type="task-exception"
-jsonPayload.Logger="taskcluster.queue.claim-resolver"
