@@ -249,11 +249,27 @@ def query_multi(summary, query, client, cluster_id, timestamp):
             use_cache=True,
         )
         if "extract" in query:
+            omit_duplicates = "omitDuplicates" in query and query["omitDuplicates"]
             print("Extracted:")
-            for row in extract_fields(res, query["extract"]):
-                print(row)
+            last_row = None
+
+            extracted = extract_fields(res, query["extract"])
+
+            if "extractSave" in query:
+                with open(query["extractSave"], "wb") as file:
+                    data = json.dumps(extracted, default=str)
+                    file.write(data.encode("utf-8"))
+
+            for row in extracted:
+                row_without_time = {k: v for k, v in row.items() if k != "time"}
+                if not omit_duplicates or row_without_time != last_row:
+                    print(row)
+                    last_row = row_without_time
+
+            return extracted
         else:
             print(f"Found {len(res)} records")
+            return res
 
 
 def check_worker_claims(summary, query, client, cluster_id, timestamp):
@@ -280,6 +296,31 @@ def check_worker_claims(summary, query, client, cluster_id, timestamp):
                 print(row)
         else:
             print(f"Found {len(res)} records")
+
+
+def summarize(rows, query):
+    def inc_counter(group, key):
+        if key not in group:
+            group[key] = 0
+        group[key] += 1
+
+    def print_counter(group, title):
+        print(f"\n{title}")
+        for key in group:
+            print(f"{key}: {group[key]}")
+
+    groups = {k: {} for k in query["fields"]}
+
+    for row in rows:
+        for k in query["fields"]:
+            field = query["fields"][k]
+            if field in row:
+                inc_counter(groups[k], row[field])
+
+    for k in query["fields"]:
+        print_counter(groups[k], k)
+
+    return groups
 
 
 def run_queries(cluster_id, query_groups=[], client=None):
@@ -313,7 +354,7 @@ def run_queries(cluster_id, query_groups=[], client=None):
                 print(f"\nFetched {len(res)} records\n")
             elif query["type"] == "query-multi":
                 # not piped yet
-                query_multi(extracted, query, client, cluster_id, timestamp)
+                extracted = query_multi(extracted, query, client, cluster_id, timestamp)
             elif query["type"] == "lookup-tasks":
                 extracted = lookup_tasks(extracted, query["field"], use_cache)
                 print(f"\nLooked up {len(extracted)} tasks")
@@ -323,12 +364,14 @@ def run_queries(cluster_id, query_groups=[], client=None):
                 check_worker_claims(extracted, query, client, cluster_id, timestamp)
             elif query["type"] == "input":
                 res = extracted = query["data"]
+            elif query["type"] == "summarize":
+                summarize(extracted, query)
             else:
                 print("Unknown type")
 
-            if "extract" in query:
-                extracted = extract_fields(res, query["extract"])
-                print(f"\nExtracted {len(extracted)} records\n")
+            # if "extract" in query:
+            #     extracted = extract_fields(res, query["extract"])
+            #     print(f"\nExtracted {len(extracted)} records\n")
 
 
 def main():
@@ -341,6 +384,7 @@ def main():
     if cluster_name:
         if cluster_name not in clusters:
             print(f"Unknown cluster: {cluster_name}")
+            print(f"Known clusters: {list(clusters.keys())}")
             return
         cluster_list = [(cluster_name, clusters[cluster_name])]
     else:

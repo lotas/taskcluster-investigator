@@ -1,0 +1,56 @@
+name: Investigate worker pool
+
+queries:
+
+- name: Worker pool
+  type: input
+  data:
+    workerPools:
+      - nss-1/b-win2022-alpha
+
+- name: query worker manager logs
+  type: query-multi
+  iterate:
+    workerPoolId: workerPools
+  query: |
+    (
+      jsonPayload.Type="worker-requested" OR
+      jsonPayload.Type="worker-running" OR
+      jsonPayload.Type="worker-stopped" OR
+      jsonPayload.Type="worker-removed"
+    )
+    jsonPayload.Fields.workerPoolId="%workerPoolId%"
+  omitDuplicates: true
+  extract:
+    time: timestamp
+    type: jsonPayload.Type
+    workerId: jsonPayload.Fields.workerId
+    providerId: jsonPayload.Fields.providerId
+    reason: jsonPayload.Fields.reason
+  extractSave: nss-win-workers.json
+
+- name: summary by previous
+  type: summarize
+  fields:
+    type: type
+    workerId: workerId
+    providerId: providerId
+    reason: reason
+
+
+# - name: query estimator logs
+#   type: query-multi
+#   iterate:
+#     workerPoolId: workerPools
+#   query: |
+#     jsonPayload.Type="simple-estimate"
+#     jsonPayload.Fields.workerPoolId="%workerPoolId%"
+#   omitDuplicates: true
+#   extract:
+#     time: timestamp
+#     desired: jsonPayload.Fields.desiredCapacity
+#     existing: jsonPayload.Fields.existingCapacity
+#     pendingTasks: jsonPayload.Fields.pendingTasks
+#     requested: jsonPayload.Fields.requestedCapacity
+#     stopping: jsonPayload.Fields.stoppingCapacity
+#   extractSave: nss-win-estimates.json
