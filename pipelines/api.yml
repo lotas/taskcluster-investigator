@@ -9,15 +9,33 @@ queries:
 
 # too slow
 - name: 403 api calls
+  type: gcp-query
   query: |
     jsonPayload.Type="monitor.apiMethod"
     jsonPayload.Fields.statusCode="403"
 
+- name: 403 api call breakdown
+  type: summarize
+  fields:
+    method: jsonPayload.Fields.name
+
 - name: 500 api calls
+  type: gcp-query
   query: |
     jsonPayload.Type="monitor.apiMethod"
     jsonPayload.Fields.statusCode="500"
 
+- name: 500 api call breakdown
+  type: summarize
+  fields:
+    method: jsonPayload.Fields.name
+
 - name: Pulse publisher send deadline
+  type: gcp-query
   query: |
     "PulsePublisher.sendDeadline exceeded"
+
+- name: Pulse publisher deadline breakdown
+  type: summarize
+  fields:
+    type: jsonPayload.Type

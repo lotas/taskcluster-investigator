@@ -3,7 +3,7 @@ name: Investigate claim expires
 queries:
 
 - name: claim-expired
-  type: query
+  type: gcp-query
   extract:
     taskId: jsonPayload.Fields.taskId
   query: |
@@ -12,15 +12,15 @@ queries:
 
 - name: fetch task data
   description: take entries from previous query and fetch task data
-  type: lookup-tasks
+  type: taskcluster-lookup-tasks
   field: taskId
 
 - name: analyze task queues
-  type: summarize-tasks
+  type: summarize
   cache: false
 
 - name: check workers
-  type: check-worker-claims
+  type: gcp-query-multi
   iterate:
     workerId: workerIds
   query: |

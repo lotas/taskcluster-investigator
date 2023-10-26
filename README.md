@@ -8,6 +8,8 @@ Authentication is required for GCP and can be done with:
 gcloud config configurations activate prod
 gcloud config set project your-project-id
 gcloud beta auth application-default login
+
+export GCP_PROJECT_ID=your-project-id
 ```
 
 Taskcluster client expects following env variables:

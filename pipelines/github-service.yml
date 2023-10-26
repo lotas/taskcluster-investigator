@@ -3,7 +3,7 @@ name: Github service
 queries:
 
 - name: github signature mismatch
-  type: count
+  type: gcp-query
   query: |
     jsonPayload.Type="monitor.error"
     jsonPayload.Fields.message="X-hub-signature does not match"

@@ -1,1 +1,3 @@
-google-cloud-logging
+google-cloud-logging=3.8.0
+taskcluster=56.0.0
+PyYAML=6.0.0

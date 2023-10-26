@@ -9,7 +9,7 @@ queries:
       - i-06e4c2473c69c4d72
 
 - name: check workers
-  type: check-worker-claims
+  type: gcp-query-multi
   iterate:
     workerId: workerIds
   query: |
