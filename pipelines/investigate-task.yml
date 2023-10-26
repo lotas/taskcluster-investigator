@@ -1,0 +1,43 @@
+name: Investigate single task
+
+queries:
+
+- name: Task id
+  type: input
+  data:
+    - taskId: UwFQ3YVMRjyxmxHEO6_tQg
+    - taskId: QH_iyf6uR5Sj8DcTkLXwnA
+
+- name: fetch task data
+  description: take entries from previous query and fetch task data
+  type: taskcluster-lookup-tasks
+  field: taskId
+  extract:
+    taskGroupId: taskGroupId
+    schedulerId: scheduler
+    name: metadata.name
+    runs: status.runs
+    taskIds: taskId
+
+- name: analyze task queues
+  type: summarize
+  fields:
+    taskGroup: taskGroupId
+    scheduler: scheduler
+    name: name
+    runs: runs
+
+# - name: query logs
+#   type: gcp-query-multi
+#   iterate:
+#     taskId: taskIds
+#   query: |
+#     jsonPayload.Type="monitor.apiMethod"
+#     "%taskId%"
+#   extract:
+#     # type: jsonPayload.Type
+#     statusCode: jsonPayload.Fields.statusCode
+#     # resource: jsonPayload.Fields.resource
+#     time: timestamp
+#     name: jsonPayload.Fields.name
+#     clientId: jsonPayload.Fields.clientId
