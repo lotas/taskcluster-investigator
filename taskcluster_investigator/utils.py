@@ -1,5 +1,6 @@
 import os
 import yaml
+import json
 from os import listdir
 from os.path import isfile, join, dirname
 
@@ -28,3 +29,9 @@ def load_pipeline_files():
 
 def load_clusters():
     return parse_yaml(join(PROJECT_ROOT, CLUSTERS_FILE))["clusters"]
+
+
+def write_file(file_name: str, contents: any):
+    with open(file_name, "wb") as file:
+        data = json.dumps(contents, default=str)
+        file.write(data.encode("utf-8"))

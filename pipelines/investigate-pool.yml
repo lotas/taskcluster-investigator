@@ -39,12 +39,10 @@ queries:
 
 
 - name: query estimator logs
-  type: gcp-query-multi
-  iterate:
-    workerPoolId: workerPools
+  type: gcp-query
   query: |
     jsonPayload.Type="simple-estimate"
-    jsonPayload.Fields.workerPoolId="%workerPoolId%"
+    jsonPayload.Fields.workerPoolId="nss-1/b-win2022-alpha"
   # omitDuplicates: true
   extract:
     time: timestamp
@@ -54,3 +52,22 @@ queries:
     requested: jsonPayload.Fields.requestedCapacity
     stopping: jsonPayload.Fields.stoppingCapacity
   extractSave: nss-win-estimates.json
+
+- name: remove zeroes
+  type: filter
+  filter: item["pendingTasks"] > 0 or item["existing"] > 0
+
+- name: filter interesting entries
+  type: filter
+  filter: item["pendingTasks"] > 0 and item["desired"] > 0 and item["requested"] == 0
+
+- name: print
+  type: print
+
+- name: analyze errors
+  type: summarize
+  fields:
+    pendingTasks: pendingTasks
+    desired: desired
+    requested: requested
+    stopping: stopping

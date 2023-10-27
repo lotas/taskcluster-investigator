@@ -18,7 +18,8 @@ def main():
     pipeline = pipelines.get_pipeline_by_name(pipeline_name)
     pipeline.set_params(
         {
-            "cluster_id": "taskcluster-communitytc-v1",
+            # "cluster_id": "taskcluster-communitytc-v1",
+            "cluster_id": "taskcluster-firefoxcitc-v1",
             "timestamp": "2023-10-26T00:00:00Z",
         }
     )

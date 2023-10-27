@@ -1,10 +1,11 @@
 import functools
 import logging
+import pprint
 from enum import StrEnum
 from dataclasses import dataclass
 
 from .cache import read_cache_file, write_cache_file
-from .utils import load_pipeline_files
+from .utils import load_pipeline_files, write_file
 from .taskcluster import lookup_tasks
 from .aggregations import summarize, extract_fields
 from .gcp import query_logs
@@ -18,15 +19,45 @@ class QueryType(StrEnum):
     query_multi = "gcp-query-multi"
     lookup_tasks = "taskcluster-lookup-tasks"
     summarize = "summarize"
+    filter = "filter"
     count = "count"
+    print = "print"
+
+
+# def query_multi(q: Query, res, params):
+#     if not q.iterate:
+#         raise Exception("No iterate field given")
+
+#     if q.iterate.items() > 1:
+#         raise Exception("Only one iterate field supported")
+
+
+def filter_by(items, filter):
+    if not filter:
+        return items
+
+    out = []
+    for item in items:
+        if eval(filter):
+            out.append(item)
+
+    return out
+
+
+def print_results(results):
+    pprint.pprint(results)
+    return results
 
 
 query_type_to_func = {
     QueryType.input: lambda q, res, params: q.data,
     QueryType.query: lambda q, res, params: query_logs(q.query, **params),
+    QueryType.query_multi: None,
     QueryType.lookup_tasks: lambda q, res, params: lookup_tasks(res, q.field),
     QueryType.summarize: lambda q, res, params: summarize(res, q.fields),
-    QueryType.count: None,
+    QueryType.count: lambda q, res, params: len(res),
+    QueryType.filter: lambda q, res, params: filter_by(res, q.filter),
+    QueryType.print: lambda q, res, params: print_results(res),
 }
 
 
@@ -36,8 +67,10 @@ class Query:
     name: str | None
     description: str | None
     field: str | None
+    filter: str | None
     iterate: dict[str, str] | None
     extract: dict[str, str] | None
+    extractSave: str | None
     fields: dict[str, str] | None
     query: str | None
     data: dict[str, any] | list[any] | None
@@ -65,6 +98,8 @@ class Query:
 
         if self.extract:
             out = extract_fields(out, self.extract)
+            if self.extractSave:
+                write_file(self.extractSave, out)
 
         return out
 
@@ -138,7 +173,9 @@ def load_pipelines():
                     fields=get_key(q, "fields"),
                     iterate=get_key(q, "iterate"),
                     extract=get_key(q, "extract"),
+                    extractSave=get_key(q, "extractSave"),
                     query=get_key(q, "query"),
+                    filter=get_key(q, "filter"),
                     data=get_key(q, "data"),
                 )
             )
