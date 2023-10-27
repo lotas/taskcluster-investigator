@@ -36,6 +36,5 @@ def summarize(rows: list[dict], fields: dict[str, str]):
         print(f"\nSummary: {g}")
         for k in groups[g]:
             print(f"{k}: {groups[g][k]}")
-        print("\n")
 
     return groups

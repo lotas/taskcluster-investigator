@@ -24,7 +24,6 @@ class QueryType(StrEnum):
 query_type_to_func = {
     QueryType.input: lambda q, res, params: q.data,
     QueryType.query: lambda q, res, params: query_logs(q.query, **params),
-    QueryType.query_multi: None,
     QueryType.lookup_tasks: lambda q, res, params: lookup_tasks(res, q.field),
     QueryType.summarize: lambda q, res, params: summarize(res, q.fields),
     QueryType.count: None,
@@ -84,7 +83,7 @@ class Pipeline:
         return self
 
     def run(self):
-        logger.debug("running pipeline: %s [%s]", self.name, self.id)
+        logger.info("running pipeline: %s [%s]", self.name, self.id)
         results = {}
         # each query will use results as input and return results as output
         # doesn't support multi-channel output yet, more like a pipeline
@@ -96,10 +95,22 @@ class Pipeline:
 
 @functools.lru_cache
 def get_pipeline_by_name(name):
+    if not name:
+        raise Exception("Pipeline name not given")
+
+    found = []
     for pipeline in load_pipelines():
         if name in pipeline.name or name in pipeline.id:
-            return pipeline
-    return None
+            found.append(pipeline)
+
+    if len(found) == 0:
+        raise Exception(f"Pipeline not found: {name}")
+
+    if len(found) > 1:
+        names = ", ".join([f"{p.name} ({p.id}.yml)" for p in found])
+        raise Exception(f"Several pipelines match given name: {name} [{names}]")
+
+    return found.pop()
 
 
 def load_pipelines():

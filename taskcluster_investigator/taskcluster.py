@@ -33,6 +33,7 @@ def load_task(task_id):
         task = queue.task(task_id)
         task["taskId"] = task_id
         task["status"] = queue.status(task_id)["status"]
+        task["runLength"] = len(task["status"]["runs"])
         logger.debug(f"Loaded task {task_id}")
         return task
     except taskcluster.exceptions.TaskclusterRestFailure as e:

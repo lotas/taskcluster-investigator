@@ -1,0 +1,16 @@
+name: Investigate claimWork 500 errors
+
+queries:
+
+- name: claim work 500
+  type: gcp-query
+  query: |
+    jsonPayload.Fields.name="claimWork"
+    jsonPayload.Fields.statusCode="500"
+
+- name: analyze errors
+  type: summarize
+  fields:
+    client: jsonPayload.Fields.clientId
+    resource: jsonPayload.Fields.resource
+    ips: jsonPayload.Fields.sourceIp

@@ -1,3 +1,4 @@
+import sys
 import logging
 import json
 
@@ -11,8 +12,10 @@ def main():
     taskcluster.ensure_auth()
     gcp.ensure_client()
 
+    pipeline_name = sys.argv[1] if len(sys.argv) > 1 else ""
+
     # pipeline = pipelines.get_pipeline_by_name('investigate-task')
-    pipeline = pipelines.get_pipeline_by_name("api")
+    pipeline = pipelines.get_pipeline_by_name(pipeline_name)
     pipeline.set_params(
         {
             "cluster_id": "taskcluster-communitytc-v1",
