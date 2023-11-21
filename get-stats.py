@@ -167,6 +167,13 @@ def extract_fields(iterator, fields):
     return out
 
 
+def extract_fields_two(iterator, fields):
+    out = []
+    for row in iterator:
+        out.append({name: get_nested_value(row, fields[name]) for name in fields})
+    return out
+
+
 def lookup_tasks(entries, field, use_cache=True):
     if use_cache:
         cache = read_cache_file("lookup-tasks", [entries, field])
